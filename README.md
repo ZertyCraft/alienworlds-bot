@@ -16,8 +16,7 @@ This script:
 - Firefox browser
 - Geckodriver
 - Installed _requirements.txt_
-- A Reddit account
-- A Wax.io account created using your Reddit
+- A Wax.io account
 
 ---
 
