@@ -38,7 +38,7 @@ This script:
 4. Start the script by running `python3 mine.py` !
 
 
-#### *Any problems? [Submit an issue](https://gitlab.com/ZertyCraft/alienworlds-bot/-/issues/new), or email me!*
+#### *Any problems? [Submit an issue](https://github.com/ZertyCraft/alienworlds-bot/issues/new), or email me!*
 ---
 
 ## Donations
