@@ -1,5 +1,6 @@
 {
   "username": "<Your username>",
   "password": "<Your password>",
-  "login_method": "<Your connection method>"
+  "login_method": "<Your connection method>",
+  "firefox_path": ""
 }

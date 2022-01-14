@@ -4,8 +4,13 @@ from selenium.common.exceptions import NoSuchElementException
 
 from fake_useragent import UserAgent
 
+import platform
+system = platform.system()
+
 from time import sleep
 from random import randint
+
+import os
 
 import pprint
 
@@ -18,38 +23,25 @@ import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning) 
 
 
+
+
+# Global variables
+conf = []
+firefox_path = ""
+geckodriver_path = ""
+args = ""
+
 def parseArgs():
     parser = ArgumentParser()
     parser.add_argument("--headless", help="Run headless", action='store_true')
+    parser.add_argument("-v", "--verbose", help="Verbose mode", action='store_true')
 
     return parser.parse_args()
 
 
-
-
-
-
-args = parseArgs()
-############ Initialize webdriver ############
-profile = webdriver.FirefoxProfile()
-
-useragent = UserAgent()
-profile.set_preference("general.useragent.override", useragent.random)
-profile.update_preferences()
-
-
-options = Options()
-options.headless = args.headless
-
-driver = webdriver.Firefox(options=options, firefox_profile=profile)
-driver.set_window_size(1280, 1280)
-
-conf = []
-############ Initialize webdriver ############
-
-
-
-
+def debugPrint(data):
+    if args.verbose:
+        print("[DEBUG] " + str(data))
 
 
 def loadConf():
@@ -59,6 +51,27 @@ def loadConf():
     data = json.load(f)
     f.close()
 
+    print("== Initializing firefox and geckodriver ==")
+
+    firefox_path = data["firefox_path"]
+
+    if firefox_path == "":
+        if system == "Windows":
+            data["firefox_path"] = "C:/Program Files/Mozilla Firefox/firefox.exe"
+        elif system == "Linux":
+            data["firefox_path"] = "/usr/bin/firefox"            
+        else:
+            print("Error, system don't match")
+
+    if system == "Windows":
+        data["geckodriver_path"] = os.path.abspath(os.getcwd()).replace('\\', '/')+"/bin/geckodriver/windows/geckodriver.exe"
+    elif system == "Linux":
+        data["geckodriver_path"] = os.path.abspath(os.getcwd()).replace('\\', '/')+"/bin/geckodriver/linux/geckodriver"
+    else:
+        print("Error, system don't match")
+
+    debugPrint("Current system : " + str(system))
+            
     return data
 
 def checkExistsByXpath(xpath):
@@ -67,15 +80,19 @@ def checkExistsByXpath(xpath):
     except NoSuchElementException:
         return False
     return True
+
 def waitForElement(xpath, refreshCount = 30, refreshOnTimeout = False):
     count = 0
     while checkExistsByXpath(xpath) == False:
+        debugPrint("Element not found, retrying")
         sleep(1)
         count += 1
         if(count == refreshCount):
             if refreshOnTimeout:
+                debugPrint("Element not found after "+str(count)+" tries, reloading website\n---"+str(xpath))
                 driver.refresh()
-            else:  
+            else:
+                debugPrint("Element not found after "+str(count)+" tries, exiting\n---"+str(xpath))
                 return False
     return True
 
@@ -104,6 +121,7 @@ def connectWax():
         driver.find_element_by_xpath('/html/body/div[1]/div/div/div/div[1]/div/div[4]/div/div/div/div[4]/button').click()
     else:
         print("Error, can't login")
+        debugPrint("Can't loggin with wax")
         return False
         
 
@@ -153,11 +171,6 @@ def mine():
 
 
         if(waitForElement('/html/body/div/div[3]/div[1]/div/div[3]/div[3]/div[2]/div/div/div/div/div/div/span', 5, False)):
-            
-        #    if(checkExistsByXpath('/html/body/div/div[3]/div[1]/div/div[3]/div[1]/div/div[2]/p[1]')):
-        #        balance = driver.find_element_by_xpath('/html/body/div/div[3]/div[1]/div/div[3]/div[1]/div/div[2]/p[1]').text
-        #        print("== Current balance : " + str(balance) + " Trilium ==")
-
             # Mine button
             if(driver.find_element_by_xpath('/html/body/div/div[3]/div[1]/div/div[3]/div[3]/div[2]/div/div/div/div/div/div/span').text == "Mine"):
                 driver.find_element_by_xpath('/html/body/div/div[3]/div[1]/div/div[3]/div[3]/div[2]/div/div/div').click()
@@ -178,18 +191,19 @@ def mine():
 
                 driver.switch_to.window(confirmPage)
                 sleep(2)
-                while(waitForElement('/html/body/div/div/section/div[2]/div/div[5]/button', 30, False) == False):
-                    sleep(2)
+                if waitForElement('/html/body/div/div/section/div[2]/div/div[5]/button', 30, False):
+                    driver.find_element_by_xpath('/html/body/div/div/section/div[2]/div/div[5]/button').click()
+                    sleep(5)
 
+                    driver.switch_to.window(mainPage)
 
-                driver.find_element_by_xpath('/html/body/div/div/section/div[2]/div/div[5]/button').click()
-                sleep(5)
-
-                driver.switch_to.window(mainPage)
-
-                if(checkExistsByXpath('/html/body/div/div[3]/div[1]/div/div[3]/div[1]/div/div[2]/p[1]')):
-                    balance = driver.find_element_by_xpath('/html/body/div/div[3]/div[1]/div/div[3]/div[1]/div/div[2]/p[1]').text
-                    print("== Current balance : " + str(balance) + " Trilium ==")
+                    if(checkExistsByXpath('/html/body/div/div[3]/div[1]/div/div[3]/div[1]/div/div[2]/p[1]')):
+                        balance = driver.find_element_by_xpath('/html/body/div/div[3]/div[1]/div/div[3]/div[1]/div/div[2]/p[1]').text
+                        print("== Current balance : " + str(balance) + " Trilium ==")
+                else:
+                    driver.switch_to.window(mainPage)
+                    confirmPage.close()
+                    debugPrint("Stuck on confirmation popup, closing popup and retrying")
 
 
         sleep(randint(5, 15))
@@ -197,7 +211,29 @@ def mine():
     return False
 
 if __name__ == '__main__':
+    args = parseArgs()
     conf = loadConf()
+    
+    ############ Initialize webdriver ############
+    profile = webdriver.FirefoxProfile()
+
+    useragent = UserAgent()
+    profile.set_preference("general.useragent.override", useragent.random)
+    profile.update_preferences()
+
+
+    options = Options()
+    options.headless = args.headless
+    options.binary_location = conf["firefox_path"]
+
+    debugPrint("firefox_binary=" + conf["firefox_path"])
+    debugPrint("executable_path=" + conf["geckodriver_path"])
+    driver = webdriver.Firefox(options=options, firefox_profile=profile, executable_path=conf["geckodriver_path"])
+    driver.set_window_size(1280, 1280)
+    ############ Initialize webdriver ############
+
+
+
 
     if(loginWax() == False):
         print("Error, can't loggin")
