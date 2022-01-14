@@ -1,5 +1,6 @@
 {
   "username": "<Your username>",
   "password": "<Your password>",
-  "login_method": "reddit"
+  "login_method": "<Your connection method>",
+  "firefox_path": ""
 }
