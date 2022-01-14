@@ -159,8 +159,8 @@ def startAlienWorld():
     sleep(5)
     
     # Click on play now
-    if(waitForElement('/html/body/div/div[3]/div/div[1]/div[2]') == True):
-        driver.find_element_by_xpath('/html/body/div/div[3]/div/div[1]/div[2]').click()
+    if(waitForElement('/html/body/div/div[3]/div/div[1]/div/div/div/div/span') == True):
+        driver.find_element_by_xpath('/html/body/div/div[3]/div/div[1]/div/div/div/div/span').click()
 
 
 def mine():
@@ -216,10 +216,6 @@ if __name__ == '__main__':
     
     ############ Initialize webdriver ############
     profile = webdriver.FirefoxProfile()
-
-    useragent = UserAgent()
-    profile.set_preference("general.useragent.override", useragent.random)
-    profile.update_preferences()
 
 
     options = Options()
