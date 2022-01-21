@@ -17,6 +17,19 @@ system = platform.system()
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
+# Constant
+WAX_USER_NAME_INPUT_XPATH = '/html/body/div[1]/div/div/div/div[1]/div/div[4]/div/div/div/div[1]/div[1]/input'
+WAX_PASSWORD_INPUT_XPATH = '/html/body/div[1]/div/div/div/div[1]/div/div[4]/div/div/div/div[1]/div[2]/input'
+WAX_LOG_IN_BUTTON_XPATH = '/html/body/div[1]/div/div/div/div[1]/div/div[4]/div/div/div/div[4]/button'
+WAX_APPROVE_TX_BUTTON_XPATH = '/html/body/div/div/section/div[2]/div/div[5]/button'
+
+AW_PLAY_NOW_BUTTON_XPATH = '/html/body/div/div[3]/div/div[1]/div/div/div/div/span'
+AW_MINE_BUTTON_XPATH = '/html/body/div/div[3]/div[1]/div/div[3]/div[5]/div[2]/div/div/div/div/div/div'
+AW_MINE_BUTTON_TEXT_XPATH = AW_MINE_BUTTON_XPATH + '/span'
+AW_CLAIM_MINE_BUTTON_XPATH = '/html/body/div/div[3]/div[1]/div/div[3]/div[5]/div[2]/div/div/div/div/div'
+AW_CLAIM_MINE_BUTTON_TEXT_XPATH = AW_CLAIM_MINE_BUTTON_XPATH + '/span'
+AW_TLM_BALANCE_TEXT_XPATH = '/html/body/div/div[3]/div[1]/div/div[3]/div[1]/div/div[2]/p[1]'
+
 # Global variables
 conf = []
 firefox_path = ""
@@ -99,38 +112,38 @@ def wait_for_element(xpath, refresh_count=30, refresh_on_timeout=False):
     return True
 
 
-def login_wax():
+def login_wax() -> bool:
     print("- Loggin in -")
     driver.get("https://all-access.wax.io/")
 
     if conf["login_method"] == 'wax':
-        connect_wax()
+        return connect_wax()
     elif conf["login_method"] == 'reddit':
-        connect_wax_with_reddit()
+        return connect_wax_with_reddit()
 
 
-def connect_wax():
+def connect_wax() -> bool:
     print("- Login -")
 
     sleep(5)
 
-    if wait_for_element('/html/body/div[1]/div/div/div/div[1]/div/div[4]/div/div/div/div[1]/div[1]/input', 10, True):
-        driver.find_element_by_xpath(
-            '/html/body/div[1]/div/div/div/div[1]/div/div[4]/div/div/div/div[1]/div[1]/input').send_keys(
+    debug_print('Waiting for wax user login')
+    if wait_for_element(WAX_USER_NAME_INPUT_XPATH, 10, True):
+        debug_print('Typing wax user name')
+        driver.find_element_by_xpath(WAX_USER_NAME_INPUT_XPATH).send_keys(
             conf["username"])
-        driver.find_element_by_xpath(
-            '/html/body/div[1]/div/div/div/div[1]/div/div[4]/div/div/div/div[1]/div[2]/input').send_keys(
+        debug_print('Typing wax user password')
+        driver.find_element_by_xpath(WAX_PASSWORD_INPUT_XPATH).send_keys(
             conf["password"])
-
-        driver.find_element_by_xpath(
-            '/html/body/div[1]/div/div/div/div[1]/div/div[4]/div/div/div/div[4]/button').click()
+        debug_print('Login wax user')
+        driver.find_element_by_xpath(WAX_LOG_IN_BUTTON_XPATH).click()
+        return True
     else:
-        print("Error, can't login")
-        debug_print("Can't loggin with wax")
+        debug_print("Can't login with wax")
         return False
 
 
-def connect_wax_with_reddit():
+def connect_wax_with_reddit() -> bool:
     print("- Login with Reddit -")
     while driver.current_url == "https://all-access.wax.io/":
         sleep(5)
@@ -154,7 +167,7 @@ def connect_wax_with_reddit():
         return False
 
 
-def start_alien_world():
+def start_alien_world() -> bool:
     while driver.current_url != "https://wallet.wax.io/dashboard":
         sleep(1)
 
@@ -163,8 +176,12 @@ def start_alien_world():
     sleep(5)
 
     # Click on play now
-    if wait_for_element('/html/body/div/div[3]/div/div[1]/div/div/div/div/span'):
-        driver.find_element_by_xpath('/html/body/div/div[3]/div/div[1]/div/div/div/div/span').click()
+    if wait_for_element(AW_PLAY_NOW_BUTTON_XPATH):
+        driver.find_element_by_xpath(AW_PLAY_NOW_BUTTON_XPATH).click()
+        sleep(10)
+        return True
+
+    return False
 
 
 def mine():
@@ -172,43 +189,47 @@ def mine():
     main_page = driver.current_window_handle
 
     while True:
-
+        debug_print('Waiting for mine button')
         if (
-                wait_for_element('/html/body/div/div[3]/div[1]/div/div[3]/div[3]/div[2]/div/div/div/div/div/div/span',
+                wait_for_element(AW_MINE_BUTTON_TEXT_XPATH,
                                  5, False)):
             # Mine button
-            if (driver.find_element_by_xpath(
-                    '/html/body/div/div[3]/div[1]/div/div[3]/div[3]/div[2]/div/div/div/div/div/div/span').text == "Mine"):
-                driver.find_element_by_xpath(
-                    '/html/body/div/div[3]/div[1]/div/div[3]/div[3]/div[2]/div/div/div').click()
+            if driver.find_element_by_xpath(AW_MINE_BUTTON_TEXT_XPATH).text == "Mine":
+                debug_print('Click on mine button')
+                driver.find_element_by_xpath(AW_MINE_BUTTON_XPATH).click()
                 sleep(5)
 
+        debug_print('Waiting for claim mine button')
         if (
-        wait_for_element('/html/body/div/div[3]/div[1]/div/div[3]/div[3]/div[2]/div/div/div/div/div/span', 5, False)):
+        wait_for_element(AW_CLAIM_MINE_BUTTON_TEXT_XPATH, 5, False)):
             # Claim mine button
-            if (driver.find_element_by_xpath(
-                    '/html/body/div/div[3]/div[1]/div/div[3]/div[3]/div[2]/div/div/div/div/div/span').text == "Claim Mine"):
-                driver.find_element_by_xpath('/html/body/div/div[3]/div[1]/div/div[3]/div[3]/div[2]/div/div').click()
+            if driver.find_element_by_xpath(AW_CLAIM_MINE_BUTTON_TEXT_XPATH).text == "Claim Mine":
+                debug_print('Click on claim mine button')
+                driver.find_element_by_xpath(AW_CLAIM_MINE_BUTTON_XPATH).click()
                 sleep(5)
 
+                debug_print('Switch to approve transaction page')
                 while len(driver.window_handles) == 1:
                     sleep(1)
 
+                # Approve transaction
                 for handle in driver.window_handles:
                     if handle != main_page:
                         confirm_page = handle
 
                 driver.switch_to.window(confirm_page)
                 sleep(2)
-                if wait_for_element('/html/body/div/div/section/div[2]/div/div[5]/button', 30, False):
-                    driver.find_element_by_xpath('/html/body/div/div/section/div[2]/div/div[5]/button').click()
+
+                debug_print('Waiting for wax approve tx button')
+                if wait_for_element(WAX_APPROVE_TX_BUTTON_XPATH, 30, False):
+                    debug_print('Click on wax approve tx button')
+                    driver.find_element_by_xpath(WAX_APPROVE_TX_BUTTON_XPATH).click()
                     sleep(5)
 
                     driver.switch_to.window(main_page)
 
-                    if check_exists_by_xpath('/html/body/div/div[3]/div[1]/div/div[3]/div[1]/div/div[2]/p[1]'):
-                        balance = driver.find_element_by_xpath(
-                            '/html/body/div/div[3]/div[1]/div/div[3]/div[1]/div/div[2]/p[1]').text
+                    if check_exists_by_xpath(AW_TLM_BALANCE_TEXT_XPATH):
+                        balance = driver.find_element_by_xpath(AW_TLM_BALANCE_TEXT_XPATH).text
                         print("== Current balance : " + str(balance) + " Trilium ==")
                 else:
                     driver.switch_to.window(main_page)
@@ -238,7 +259,8 @@ if __name__ == '__main__':
     if not login_wax():
         print("Error, can't log in")
         exit()
-    elif not start_alien_world():
+
+    if not start_alien_world():
         print("Error while starting Alien Worlds")
         exit()
 
