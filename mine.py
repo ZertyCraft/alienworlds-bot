@@ -50,6 +50,12 @@ def debug_print(data):
         print("[DEBUG] " + data)
 
 
+def random_sleep(min_sec=5, max_sec=10):
+    sec = randint(min_sec, max_sec)
+    debug_print('random sleep for {} seconds'.format(sec))
+    sleep(sec)
+
+
 def load_conf():
     print("- Loading configuration -")
 
@@ -125,17 +131,21 @@ def login_wax() -> bool:
 def connect_wax() -> bool:
     print("- Login -")
 
-    sleep(5)
+    random_sleep()
 
     debug_print('Waiting for wax user login')
     if wait_for_element(WAX_USER_NAME_INPUT_XPATH, 10, True):
         debug_print('Typing wax user name')
+        random_sleep(min_sec=2, max_sec=5)
         driver.find_element_by_xpath(WAX_USER_NAME_INPUT_XPATH).send_keys(
             conf["username"])
+
         debug_print('Typing wax user password')
+        random_sleep(min_sec=2, max_sec=5)
         driver.find_element_by_xpath(WAX_PASSWORD_INPUT_XPATH).send_keys(
             conf["password"])
         debug_print('Login wax user')
+        random_sleep(min_sec=1, max_sec=2)
         driver.find_element_by_xpath(WAX_LOG_IN_BUTTON_XPATH).click()
         return True
     else:
@@ -146,11 +156,11 @@ def connect_wax() -> bool:
 def connect_wax_with_reddit() -> bool:
     print("- Login with Reddit -")
     while driver.current_url == "https://all-access.wax.io/":
-        sleep(5)
+        random_sleep()
         if wait_for_element('//*[@id="reddit-social-btn"]', 30, True):
             # Click on reddit button | https://all-access.wax.io/
             driver.find_element_by_xpath('//*[@id="reddit-social-btn"]').click()
-            sleep(5)
+            random_sleep()
 
     if wait_for_element('//*[@id="loginUsername"]', 5):
         driver.find_element_by_xpath('//*[@id="loginUsername"]').send_keys(conf["username"])
@@ -173,12 +183,13 @@ def start_alien_world() -> bool:
 
     print("- Starting AlienWorlds -")
     driver.get("https://play.alienworlds.io/")
-    sleep(5)
+    random_sleep()
 
     # Click on play now
     if wait_for_element(AW_PLAY_NOW_BUTTON_XPATH):
         driver.find_element_by_xpath(AW_PLAY_NOW_BUTTON_XPATH).click()
-        sleep(10)
+        random_sleep(min_sec=10)
+
         return True
 
     return False
@@ -197,7 +208,7 @@ def mine():
             if driver.find_element_by_xpath(AW_MINE_BUTTON_TEXT_XPATH).text == "Mine":
                 debug_print('Click on mine button')
                 driver.find_element_by_xpath(AW_MINE_BUTTON_XPATH).click()
-                sleep(5)
+                random_sleep()
 
         debug_print('Waiting for claim mine button')
         if (
@@ -206,7 +217,7 @@ def mine():
             if driver.find_element_by_xpath(AW_CLAIM_MINE_BUTTON_TEXT_XPATH).text == "Claim Mine":
                 debug_print('Click on claim mine button')
                 driver.find_element_by_xpath(AW_CLAIM_MINE_BUTTON_XPATH).click()
-                sleep(5)
+                random_sleep()
 
                 debug_print('Switch to approve transaction page')
                 while len(driver.window_handles) == 1:
@@ -218,13 +229,13 @@ def mine():
                         confirm_page = handle
 
                 driver.switch_to.window(confirm_page)
-                sleep(2)
+                random_sleep(min_sec=3)
 
                 debug_print('Waiting for wax approve tx button')
                 if wait_for_element(WAX_APPROVE_TX_BUTTON_XPATH, 30, False):
                     debug_print('Click on wax approve tx button')
                     driver.find_element_by_xpath(WAX_APPROVE_TX_BUTTON_XPATH).click()
-                    sleep(5)
+                    random_sleep()
 
                     driver.switch_to.window(main_page)
 
@@ -236,7 +247,7 @@ def mine():
                     confirm_page.close()
                     debug_print("Stuck on confirmation popup, closing popup and retrying")
 
-        sleep(randint(5, 15))
+        random_sleep()
 
 
 if __name__ == '__main__':
