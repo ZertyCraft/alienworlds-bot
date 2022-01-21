@@ -213,8 +213,6 @@ def mine():
 
         sleep(randint(5, 15))
 
-    return False
-
 
 if __name__ == '__main__':
     args = parse_args()
@@ -234,12 +232,10 @@ if __name__ == '__main__':
     # Initialize webdriver
 
     if not login_wax():
-        print("Error, can't loggin")
+        print("Error, can't log in")
         exit()
     elif not start_alien_world():
-        print("Error while starting Alienworld")
+        print("Error while starting Alien Worlds")
         exit()
 
-    elif not mine():
-        print("Error while mining")
-        exit()
+    mine()
