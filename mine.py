@@ -34,7 +34,7 @@ def parse_args():
 
 def debug_print(data):
     if args.verbose:
-        print("[DEBUG] " + str(data))
+        print("[DEBUG] " + data)
 
 
 def load_conf():
@@ -48,11 +48,15 @@ def load_conf():
 
     firefox_path = data["firefox_path"]
 
+    debug_print("Current system : " + str(system))
+
     if firefox_path == "":
         if system == "Windows":
             data["firefox_path"] = "C:/Program Files/Mozilla Firefox/firefox.exe"
         elif system == "Linux":
             data["firefox_path"] = "/usr/bin/firefox"
+        elif system == 'Darwin':
+            data["firefox_path"] = '/Applications/Firefox.app/Contents/MacOS/firefox'
         else:
             print("Error, system don't match")
 
@@ -62,10 +66,11 @@ def load_conf():
     elif system == "Linux":
         data["geckodriver_path"] = os.path.abspath(os.getcwd()).replace('\\',
                                                                         '/') + "/bin/geckodriver/linux/geckodriver"
+    elif system == 'Darwin':
+        data["geckodriver_path"] = os.path.abspath(os.getcwd()).replace('\\',
+                                                                        '/') + "/bin/geckodriver/darwin/geckodriver"
     else:
         print("Error, system don't match")
-
-    debug_print("Current system : " + str(system))
 
     return data
 
@@ -109,8 +114,7 @@ def connect_wax():
 
     sleep(5)
 
-    if (wait_for_element('/html/body/div[1]/div/div/div/div[1]/div/div[4]/div/div/div/div[1]/div[1]/input', 10,
-                         True) == True):
+    if wait_for_element('/html/body/div[1]/div/div/div/div[1]/div/div[4]/div/div/div/div[1]/div[1]/input', 10, True):
         driver.find_element_by_xpath(
             '/html/body/div[1]/div/div/div/div[1]/div/div[4]/div/div/div/div[1]/div[1]/input').send_keys(
             conf["username"])
