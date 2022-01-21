@@ -1,35 +1,28 @@
+from time import sleep
+from random import randint
+import os
+import pprint
+import platform
+import json
+from argparse import ArgumentParser
+import warnings
+
 from selenium import webdriver
 from selenium.webdriver.firefox.options import Options
 from selenium.common.exceptions import NoSuchElementException
 
 from fake_useragent import UserAgent
 
-import platform
 system = platform.system()
 
-from time import sleep
-from random import randint
-
-import os
-
-import pprint
-
-import json
-
-from argparse import ArgumentParser
-
-
-import warnings
-warnings.filterwarnings("ignore", category=DeprecationWarning) 
-
-
-
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 # Global variables
 conf = []
 firefox_path = ""
 geckodriver_path = ""
 args = ""
+
 
 def parseArgs():
     parser = ArgumentParser()
@@ -59,20 +52,23 @@ def loadConf():
         if system == "Windows":
             data["firefox_path"] = "C:/Program Files/Mozilla Firefox/firefox.exe"
         elif system == "Linux":
-            data["firefox_path"] = "/usr/bin/firefox"            
+            data["firefox_path"] = "/usr/bin/firefox"
         else:
             print("Error, system don't match")
 
     if system == "Windows":
-        data["geckodriver_path"] = os.path.abspath(os.getcwd()).replace('\\', '/')+"/bin/geckodriver/windows/geckodriver.exe"
+        data["geckodriver_path"] = os.path.abspath(os.getcwd()).replace('\\',
+                                                                        '/') + "/bin/geckodriver/windows/geckodriver.exe"
     elif system == "Linux":
-        data["geckodriver_path"] = os.path.abspath(os.getcwd()).replace('\\', '/')+"/bin/geckodriver/linux/geckodriver"
+        data["geckodriver_path"] = os.path.abspath(os.getcwd()).replace('\\',
+                                                                        '/') + "/bin/geckodriver/linux/geckodriver"
     else:
         print("Error, system don't match")
 
     debugPrint("Current system : " + str(system))
-            
+
     return data
+
 
 def checkExistsByXpath(xpath):
     try:
@@ -81,18 +77,19 @@ def checkExistsByXpath(xpath):
         return False
     return True
 
-def waitForElement(xpath, refreshCount = 30, refreshOnTimeout = False):
+
+def waitForElement(xpath, refreshCount=30, refreshOnTimeout=False):
     count = 0
     while checkExistsByXpath(xpath) == False:
         debugPrint("Element not found, retrying")
         sleep(1)
         count += 1
-        if(count == refreshCount):
+        if (count == refreshCount):
             if refreshOnTimeout:
-                debugPrint("Element not found after "+str(count)+" tries, reloading website\n---"+str(xpath))
+                debugPrint("Element not found after " + str(count) + " tries, reloading website\n---" + str(xpath))
                 driver.refresh()
             else:
-                debugPrint("Element not found after "+str(count)+" tries, exiting\n---"+str(xpath))
+                debugPrint("Element not found after " + str(count) + " tries, exiting\n---" + str(xpath))
                 return False
     return True
 
@@ -101,65 +98,68 @@ def loginWax():
     print("- Loggin in -")
     driver.get("https://all-access.wax.io/")
 
-    
     if conf["login_method"] == 'wax':
         connectWax()
     elif conf["login_method"] == 'reddit':
         connectWaxWithReddit()
 
+
 def connectWax():
     print("- Login -")
-    
+
     sleep(5)
 
-    
+    if (waitForElement('/html/body/div[1]/div/div/div/div[1]/div/div[4]/div/div/div/div[1]/div[1]/input', 10,
+                       True) == True):
+        driver.find_element_by_xpath(
+            '/html/body/div[1]/div/div/div/div[1]/div/div[4]/div/div/div/div[1]/div[1]/input').send_keys(
+            conf["username"])
+        driver.find_element_by_xpath(
+            '/html/body/div[1]/div/div/div/div[1]/div/div[4]/div/div/div/div[1]/div[2]/input').send_keys(
+            conf["password"])
 
-    if(waitForElement('/html/body/div[1]/div/div/div/div[1]/div/div[4]/div/div/div/div[1]/div[1]/input', 10, True) == True):
-        driver.find_element_by_xpath('/html/body/div[1]/div/div/div/div[1]/div/div[4]/div/div/div/div[1]/div[1]/input').send_keys(conf["username"])
-        driver.find_element_by_xpath('/html/body/div[1]/div/div/div/div[1]/div/div[4]/div/div/div/div[1]/div[2]/input').send_keys(conf["password"])
-
-        driver.find_element_by_xpath('/html/body/div[1]/div/div/div/div[1]/div/div[4]/div/div/div/div[4]/button').click()
+        driver.find_element_by_xpath(
+            '/html/body/div[1]/div/div/div/div[1]/div/div[4]/div/div/div/div[4]/button').click()
     else:
         print("Error, can't login")
         debugPrint("Can't loggin with wax")
         return False
-        
+
 
 def connectWaxWithReddit():
     print("- Login with Reddit -")
-    while(driver.current_url == "https://all-access.wax.io/"):
+    while (driver.current_url == "https://all-access.wax.io/"):
         sleep(5)
-        if(waitForElement('//*[@id="reddit-social-btn"]', 30, True) == True):
-
+        if (waitForElement('//*[@id="reddit-social-btn"]', 30, True) == True):
             # Click on reddit button | https://all-access.wax.io/
             driver.find_element_by_xpath('//*[@id="reddit-social-btn"]').click()
             sleep(5)
 
-        
-    if(waitForElement('//*[@id="loginUsername"]', 5) == True):
+    if (waitForElement('//*[@id="loginUsername"]', 5) == True):
         driver.find_element_by_xpath('//*[@id="loginUsername"]').send_keys(conf["username"])
         driver.find_element_by_xpath('//*[@id="loginPassword"]').send_keys(conf["password"])
 
         driver.find_element_by_xpath('/html/body/div/main/div[1]/div/div[2]/form/fieldset[5]/button').click()
 
     # Click on allow button | allow wax to access to reddit
-    if(waitForElement('/html/body/div[3]/div/div[2]/form/div/input[1]') == True):
+    if (waitForElement('/html/body/div[3]/div/div[2]/form/div/input[1]') == True):
         driver.find_element_by_xpath('/html/body/div[3]/div/div[2]/form/div/input[1]').click()
 
     else:
         print("Error, can't find Reddit login button")
         return False
 
+
 def startAlienWorld():
-    while(driver.current_url != "https://wallet.wax.io/dashboard"):
+    while (driver.current_url != "https://wallet.wax.io/dashboard"):
         sleep(1)
-    
+
     print("- Starting AlienWorlds -")
     driver.get("https://play.alienworlds.io/")
     sleep(5)
-    
+
     # Click on play now
-    if(waitForElement('/html/body/div/div[3]/div/div[1]/div/div/div/div/span') == True):
+    if (waitForElement('/html/body/div/div[3]/div/div[1]/div/div/div/div/span') == True):
         driver.find_element_by_xpath('/html/body/div/div[3]/div/div[1]/div/div/div/div/span').click()
 
 
@@ -169,20 +169,23 @@ def mine():
 
     while True:
 
-
-        if(waitForElement('/html/body/div/div[3]/div[1]/div/div[3]/div[3]/div[2]/div/div/div/div/div/div/span', 5, False)):
+        if (
+        waitForElement('/html/body/div/div[3]/div[1]/div/div[3]/div[3]/div[2]/div/div/div/div/div/div/span', 5, False)):
             # Mine button
-            if(driver.find_element_by_xpath('/html/body/div/div[3]/div[1]/div/div[3]/div[3]/div[2]/div/div/div/div/div/div/span').text == "Mine"):
-                driver.find_element_by_xpath('/html/body/div/div[3]/div[1]/div/div[3]/div[3]/div[2]/div/div/div').click()
+            if (driver.find_element_by_xpath(
+                    '/html/body/div/div[3]/div[1]/div/div[3]/div[3]/div[2]/div/div/div/div/div/div/span').text == "Mine"):
+                driver.find_element_by_xpath(
+                    '/html/body/div/div[3]/div[1]/div/div[3]/div[3]/div[2]/div/div/div').click()
                 sleep(5)
-        
-        if(waitForElement('/html/body/div/div[3]/div[1]/div/div[3]/div[3]/div[2]/div/div/div/div/div/span', 5, False)):
+
+        if (waitForElement('/html/body/div/div[3]/div[1]/div/div[3]/div[3]/div[2]/div/div/div/div/div/span', 5, False)):
             # Claim mine button
-            if(driver.find_element_by_xpath('/html/body/div/div[3]/div[1]/div/div[3]/div[3]/div[2]/div/div/div/div/div/span').text == "Claim Mine"):
+            if (driver.find_element_by_xpath(
+                    '/html/body/div/div[3]/div[1]/div/div[3]/div[3]/div[2]/div/div/div/div/div/span').text == "Claim Mine"):
                 driver.find_element_by_xpath('/html/body/div/div[3]/div[1]/div/div[3]/div[3]/div[2]/div/div').click()
                 sleep(5)
-    
-                while(len(driver.window_handles) == 1):
+
+                while (len(driver.window_handles) == 1):
                     sleep(1)
 
                 for handle in driver.window_handles:
@@ -197,26 +200,26 @@ def mine():
 
                     driver.switch_to.window(mainPage)
 
-                    if(checkExistsByXpath('/html/body/div/div[3]/div[1]/div/div[3]/div[1]/div/div[2]/p[1]')):
-                        balance = driver.find_element_by_xpath('/html/body/div/div[3]/div[1]/div/div[3]/div[1]/div/div[2]/p[1]').text
+                    if (checkExistsByXpath('/html/body/div/div[3]/div[1]/div/div[3]/div[1]/div/div[2]/p[1]')):
+                        balance = driver.find_element_by_xpath(
+                            '/html/body/div/div[3]/div[1]/div/div[3]/div[1]/div/div[2]/p[1]').text
                         print("== Current balance : " + str(balance) + " Trilium ==")
                 else:
                     driver.switch_to.window(mainPage)
                     confirmPage.close()
                     debugPrint("Stuck on confirmation popup, closing popup and retrying")
 
-
         sleep(randint(5, 15))
-    
+
     return False
+
 
 if __name__ == '__main__':
     args = parseArgs()
     conf = loadConf()
-    
+
     ############ Initialize webdriver ############
     profile = webdriver.FirefoxProfile()
-
 
     options = Options()
     options.headless = args.headless
@@ -228,16 +231,13 @@ if __name__ == '__main__':
     driver.set_window_size(1280, 1280)
     ############ Initialize webdriver ############
 
-
-
-
-    if(loginWax() == False):
+    if (loginWax() == False):
         print("Error, can't loggin")
         exit()
-    elif(startAlienWorld() == False):
+    elif (startAlienWorld() == False):
         print("Error while starting Alienworld")
         exit()
 
-    elif(mine() == False):
+    elif (mine() == False):
         print("Error while mining")
         exit()
