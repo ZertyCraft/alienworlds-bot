@@ -1,3 +1,4 @@
+import pickle
 from time import sleep
 from random import randint
 import os
@@ -121,7 +122,22 @@ def wait_for_element(xpath, refresh_count=30, refresh_on_timeout=False):
 def login_wax() -> bool:
     print("- Loggin in -")
     driver.get("https://all-access.wax.io/")
-
+    cookies = pickle.load(open("cookies.pkl", "rb"))
+    for cookie in cookies:
+        cookie.pop('domain')
+        cookie.pop('httpOnly')
+        # cookie.pop('expiry')
+        print(cookie)
+        driver.add_cookie(cookie)
+    driver.get("https://all-access.wax.io/")
+    i = 0
+    while driver.current_url != "https://wallet.wax.io/dashboard":
+        i = i + 1
+        if i == 9:
+            break
+        sleep(1)
+    if driver.current_url == "https://wallet.wax.io/dashboard":
+        return True
     if conf["login_method"] == 'wax':
         return connect_wax()
     elif conf["login_method"] == 'reddit':
@@ -182,6 +198,7 @@ def start_alien_world() -> bool:
         sleep(1)
 
     print("- Starting AlienWorlds -")
+    pickle.dump( driver.get_cookies() , open("cookies.pkl","wb"))
     driver.get("https://play.alienworlds.io/")
     random_sleep()
 
@@ -244,8 +261,11 @@ def mine():
                         print("== Current balance : " + str(balance) + " Trilium ==")
                 else:
                     driver.switch_to.window(main_page)
-                    confirm_page.close()
-                    debug_print("Stuck on confirmation popup, closing popup and retrying")
+                    try:
+                        confirm_page.close()
+                        debug_print("Stuck on confirmation popup, closing popup and retrying")
+                    except:
+                        pass
 
         random_sleep()
 
@@ -256,6 +276,11 @@ if __name__ == '__main__':
 
     # Initialize webdriver
     profile = webdriver.FirefoxProfile()
+    myProxy = "127.0.0.1:3920"
+    ip, port = myProxy.split(':')
+    profile.set_preference('network.proxy.type', 1)
+    profile.set_preference('network.proxy.socks', ip)
+    profile.set_preference('network.proxy.socks_port', int(port))
 
     options = Options()
     options.headless = args.headless
@@ -263,6 +288,7 @@ if __name__ == '__main__':
 
     debug_print("firefox_binary=" + conf["firefox_path"])
     debug_print("executable_path=" + conf["geckodriver_path"])
+
     driver = webdriver.Firefox(options=options, firefox_profile=profile, executable_path=conf["geckodriver_path"])
     driver.set_window_size(1280, 1280)
     # Initialize webdriver
@@ -270,7 +296,6 @@ if __name__ == '__main__':
     if not login_wax():
         print("Error, can't log in")
         exit()
-
     if not start_alien_world():
         print("Error while starting Alien Worlds")
         exit()
